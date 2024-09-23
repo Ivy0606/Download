@@ -1,42 +1,39 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="viewport" content="width=1920"/>
-    <meta name="description"
-          content="Tizen Download API Demo" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Exosky - 3D Star Map Visualization" />
+    <title>Exosky - 3D Star Map</title>
 
-    <title>Tizen Download API</title>
+    <!-- Include Three.js from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-    <script type='text/javascript' src='$WEBAPIS/webapis/webapis.js'></script>
+    <!-- Link to a stylesheet for styling -->
     <link rel="stylesheet" type="text/css" href="style.css" />
-
 </head>
-
 <body>
 
-    <h1>Tizen Download API</h1>
+    <h1>Exosky - 3D Star Map Visualization</h1>
 
     <div class="left">
-        <h2>Available buttons/actions:</h2>
-
+        <h2>Controls:</h2>
         <div>
-            1 - Downloaded file lists<br>
-            2 - Start download - small file<br>
-            3 - Start download - large file<br>
-            Pause - Pause download<br>
-            Play - Resume download<br>
-            Stop - Cancel download<br>
-            0 - Clear logs
-        </div>
+            <label for="exoplanet-select">Select an Exoplanet:</label>
+            <select id="exoplanet-select">
+                <option value="planet1">Exoplanet 1</option>
+                <option value="planet2">Exoplanet 2</option>
+                <!-- Add more exoplanets dynamically -->
+            </select>
 
-        <div id="progress" class="progress">
-            <div id="bar" class="bar"></div>
+            <br><br>
+            <button id="toggle-constellations">Toggle Constellations</button>
+            <button id="reset-view">Reset View</button>
         </div>
 
         <fieldset>
-            <legend>Downloaded files:</legend>
-            <div id="fileList" class="logs"></div>
+            <legend>Selected Star Info:</legend>
+            <div id="star-info" class="logs">Click on a star to see details here.</div>
         </fieldset>
 
         <fieldset>
@@ -44,16 +41,113 @@
             <div id="logs" class="logs"></div>
         </fieldset>
     </div>
+
     <div class="right">
         <h2>Info</h2>
-
-        <p>This application demonstrates the usage of Tizen download API</p>
-
-        <p>The application downloads files from <code>http://techslides.com</code> and <code>http://download.blender.org</code>. If these domains are not accessible it will not work.<br>
-
-            You can change the source location of files to download by changing the contents of <code>url1</code> and <code>url2</code> variables in <code>main.js</code> file</cide></p>
+        <p>This application visualizes the night sky from the perspective of an exoplanet.</p>
+        <p>You can select an exoplanet, view stars, and even draw constellations in the sky.</p>
     </div>
 
+    <!-- Three.js Canvas for 3D Star Map -->
+    <div id="star-map" style="width:100%; height:600px;"></div>
+
+    <!-- Link to the main JavaScript file for handling Three.js rendering and interactivity -->
     <script src="main.js"></script>
+
 </body>
 </html>
+// Initialize scene, camera, and renderer for Three.js
+let scene, camera, renderer, controls;
+let starField, starInfoElement;
+
+function init() {
+    // Create the scene
+    scene = new THREE.Scene();
+
+    // Set up the camera
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.z = 50;
+
+    // Set up the renderer and attach it to the DOM
+    renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.getElementById('star-map').appendChild(renderer.domElement);
+
+    // Add controls for camera interaction (e.g., orbit controls)
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+    // Add star field (Placeholder function for now)
+    createStarField();
+
+    // Listen for exoplanet selection change
+    document.getElementById('exoplanet-select').addEventListener('change', handleExoplanetChange);
+
+    // Set up event listeners for toggling constellations and resetting view
+    document.getElementById('toggle-constellations').addEventListener('click', toggleConstellations);
+    document.getElementById('reset-view').addEventListener('click', resetView);
+
+    // Star info display element
+    starInfoElement = document.getElementById('star-info');
+
+    // Start animation loop
+    animate();
+}
+
+function createStarField() {
+    // Sample star positions for now
+    const starPositions = [
+        { ra: 10, dec: 20, distance: 50 },
+        { ra: 120, dec: 60, distance: 30 },
+        // Add more star data based on the selected exoplanet
+    ];
+
+    const starGeometry = new THREE.BufferGeometry();
+    const positions = [];
+    
+    starPositions.forEach(star => {
+        const pos = raDecToXYZ(star.ra, star.dec, star.distance);
+        positions.push(pos.x, pos.y, pos.z);
+    });
+
+    starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+
+    const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 1 });
+    starField = new THREE.Points(starGeometry, starMaterial);
+    scene.add(starField);
+}
+
+function raDecToXYZ(ra, dec, distance) {
+    const phi = THREE.Math.degToRad(90 - dec); // Convert dec to polar angle
+    const theta = THREE.Math.degToRad(ra); // Convert ra to azimuthal angle
+    const x = distance * Math.sin(phi) * Math.cos(theta);
+    const y = distance * Math.sin(phi) * Math.sin(theta);
+    const z = distance * Math.cos(phi);
+    return new THREE.Vector3(x, y, z);
+}
+
+function handleExoplanetChange(event) {
+    const selectedExoplanet = event.target.value;
+    console.log('Exoplanet selected:', selectedExoplanet);
+    
+    // Update star field based on exoplanet selection (not implemented yet)
+    // You'd retrieve new star positions and update the scene
+}
+
+function toggleConstellations() {
+    console.log('Toggle constellations');
+    // Add functionality to draw and toggle constellations
+}
+
+function resetView() {
+    controls.reset();
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene, camera);
+}
+
+// Start the application
+init();
+
